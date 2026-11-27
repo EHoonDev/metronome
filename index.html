@@ -397,7 +397,7 @@ select:focus{border-color:var(--blue)}
 .timbre-chips .chip{padding:9px 10px;text-align:left;font-size:12px}
 .vol-row{display:flex;align-items:center;gap:9px}
 .vol-ico{font-size:12px;color:var(--muted-2);flex:0 0 auto}
-.vol-row .range{--pct:70%}
+.vol-row .range{--pct:85%}
 .vol-val{font-size:11px;font-weight:800;color:var(--muted);min-width:24px;text-align:right;font-variant-numeric:tabular-nums}
 .hint{margin:8px 0 0;font-size:10.5px;line-height:1.5;color:var(--muted-2);font-weight:600}
 .hint b{color:var(--muted);font-weight:800}
@@ -623,8 +623,8 @@ select:focus{border-color:var(--blue)}
       <span class="label">볼륨</span>
       <div class="vol-row">
         <span class="vol-ico" aria-hidden="true">🔈</span>
-        <input id="volume" class="range" type="range" min="0" max="100" step="1" value="70" aria-label="볼륨">
-        <span class="vol-val" id="volVal">70</span>
+        <input id="volume" class="range" type="range" min="0" max="100" step="1" value="85" aria-label="볼륨">
+        <span class="vol-val" id="volVal">85</span>
       </div>
     </div>
 
@@ -698,7 +698,7 @@ select:focus{border-color:var(--blue)}
     subdiv: 1,
     pattern: (function () { const a = new Array(16).fill('normal'); a[0] = 'accent'; return a; })(),
     timbre: 'mech',
-    volume: 70,
+    volume: 85,
     theme: 'dark'
   };
 
@@ -732,47 +732,85 @@ select:focus{border-color:var(--blue)}
   /* ==========================================================
      2. 오디오 엔진
      ========================================================== */
-  let ctx = null, master = null, comp = null, lpf = null, shaper = null, an = null, noiseBuf = null;
+  let ctx = null, master = null, bus = null, comp = null, lpf = null, lpf2 = null,
+      drive = null, shaper = null, limiter = null, an = null, noiseBuf = null;
+
+  // 소프트 리미터 곡선 — 문턱(T) 아래는 그대로, 위는 ceiling(C)로 부드럽게 눌러
+  // 어떤 음색이든 출력 피크가 1.0(디지털 클리핑)에 닿지 않게 한다.
+  function limiterCurve(N, T, C) {
+    const curve = new Float32Array(N);
+    for (let i = 0; i < N; i++) {
+      const x = (i / (N - 1)) * 2 - 1;
+      const a = Math.abs(x);
+      const y = a <= T ? a : T + (C - T) * Math.tanh((a - T) / (C - T));
+      curve[i] = x < 0 ? -y : y;
+    }
+    return curve;
+  }
 
   function initAudio() {
     if (ctx) return ctx;
     const AC = window.AudioContext || window.webkitAudioContext;
     ctx = new AC();
 
-    // 마스터 체인: 볼륨 → 11kHz 로우패스(치찰음 억제) → 소프트 클리퍼 → 컴프레서
-    master = ctx.createGain();
-    master.gain.value = volumeToGain(state.volume);
+    /* 마스터 체인
+       음색 → 공명 버스 → 11kHz 로우패스 → 드라이브 → 소프트 새추레이션
+            → 6.2kHz 로우패스 → 컴프레서 → 볼륨 → 리미터 → 출력
+       작은 신호를 2배 이상 끌어올려 모바일 스피커에서도 또렷하게 들리게 하고,
+       큰 신호는 새추레이션·컴프레서·리미터가 나눠 받아 1.0 을 넘지 않게 한다. */
+    bus = ctx.createGain();
+    bus.gain.value = 1;
 
     lpf = ctx.createBiquadFilter();
     lpf.type = 'lowpass';
     lpf.frequency.value = 11000;
     lpf.Q.value = 0.6;
 
+    drive = ctx.createGain();
+    drive.gain.value = 2.1;
+
     shaper = ctx.createWaveShaper();
-    const N = 2048, curve = new Float32Array(N), k = Math.tanh(1.2);
+    const N = 2048, curve = new Float32Array(N), k = Math.tanh(2.2);
     for (let i = 0; i < N; i++) {
       const x = (i / (N - 1)) * 2 - 1;
-      curve[i] = Math.tanh(x * 1.2) / k;
+      curve[i] = Math.tanh(x * 2.2) / k;
     }
     shaper.curve = curve;
-    shaper.oversample = '2x';
+    shaper.oversample = '4x';
+
+    // 새추레이션으로 생긴 고역 성분을 다시 눌러 치찰음이 붙지 않게
+    lpf2 = ctx.createBiquadFilter();
+    lpf2.type = 'lowpass';
+    lpf2.frequency.value = 6200;
+    lpf2.Q.value = 0.55;
 
     comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -2;
-    comp.knee.value = 10;
-    comp.ratio.value = 2;
-    comp.attack.value = 0.03;
-    comp.release.value = 0.25;
+    comp.threshold.value = -12;
+    comp.knee.value = 8;
+    comp.ratio.value = 4;
+    comp.attack.value = 0.003;
+    comp.release.value = 0.14;
 
-    master.connect(lpf);
-    lpf.connect(shaper);
-    shaper.connect(comp);
-    comp.connect(ctx.destination);
+    master = ctx.createGain();
+    master.gain.value = volumeToGain(state.volume);
 
-    // 출력 피크 관찰용(검증 전용, 소리 경로에는 영향 없음)
+    limiter = ctx.createWaveShaper();
+    limiter.curve = limiterCurve(4096, 0.80, 0.955);
+    limiter.oversample = '2x';
+
+    bus.connect(lpf);
+    lpf.connect(drive);
+    drive.connect(shaper);
+    shaper.connect(lpf2);
+    lpf2.connect(comp);
+    comp.connect(master);
+    master.connect(limiter);
+    limiter.connect(ctx.destination);
+
+    // 출력 피크 관찰용(검증 전용, 소리 경로에는 영향 없음) — 리미터 뒤 실제 출력
     an = ctx.createAnalyser();
     an.fftSize = 2048;
-    comp.connect(an);
+    limiter.connect(an);
 
     // 클릭용 화이트노이즈 버퍼
     const len = Math.floor(ctx.sampleRate * 0.5);
@@ -782,8 +820,9 @@ select:focus{border-color:var(--blue)}
     return ctx;
   }
 
+  // 볼륨 매핑 — 100%에서는 확실히 크게, 85%(기본)에서도 충분히 크게
   function volumeToGain(v) {
-    return Math.pow(clamp(v, 0, 100) / 100, 1.5) * 1.05;
+    return Math.pow(clamp(v, 0, 100) / 100, 1.6) * 1.62;
   }
 
   /* ------------------------------------------------------------
@@ -821,7 +860,7 @@ select:focus{border-color:var(--blue)}
       node.connect(f); node = f;
     }
     const g = envGain(t, o.peak, o.attack, o.decay);
-    node.connect(g); g.connect(master);
+    node.connect(g); g.connect(bus);
     src.start(t);
     src.stop(t + Math.max(0.008, o.decay || 0.02) + 0.08);
   }
@@ -840,7 +879,7 @@ select:focus{border-color:var(--blue)}
       node.connect(f2); node = f2;
     }
     const g = envGain(t, o.peak, o.attack, o.decay);
-    node.connect(g); g.connect(master);
+    node.connect(g); g.connect(bus);
     osc.start(t);
     osc.stop(t + Math.max(0.008, o.decay || 0.05) + 0.14);
   }
@@ -856,73 +895,81 @@ select:focus{border-color:var(--blue)}
     }
   }
 
-  /* 1) 기계식 똑딱이 — 실제 위트너/세이코식 짧은 나무 타격(3~6ms) + 중저역 공명 */
+  /* 1) 기계식 똑딱이 — 실제 위트너/세이코식 나무 타격 + 중저역 공명 */
   function clickMech(t, level) {
     const accent = level === 'accent';
-    const amp = { accent: 1.0, secondary: 0.8, normal: 0.6, sub: 0.17 }[level] || 0.5;
+    const amp = { accent: 1.0, secondary: 0.82, normal: 0.66, sub: 0.2 }[level] || 0.5;
     const f0 = { accent: 1040, secondary: 880, normal: 760, sub: 1180 }[level] || 760;
-    const dec = level === 'sub' ? 0.012 : (accent ? 0.085 : 0.058);
+    const dec = level === 'sub' ? 0.018 : (accent ? 0.078 : 0.052);
 
-    // 나무 타격 트랜지언트 — 아주 짧고 단단하게, 5kHz 위는 잘라 치찰음 제거
+    // 나무 타격 트랜지언트 — 단단하되 5kHz 위는 잘라 치찰음 제거
     noiseBurst(t, {
-      hp: 1100, bp: accent ? 2500 : 2200, q: 1.3, lp: accent ? 5200 : 4200,
-      peak: amp * 0.40, attack: 0.0012, decay: accent ? 0.006 : 0.0045
+      hp: 1200, bp: accent ? 2500 : 2250, q: 1.2, lp: accent ? 4600 : 3800,
+      peak: amp * 0.62, attack: 0.0012, decay: accent ? 0.008 : 0.006
     });
 
     if (accent) {
-      // 강박 — 살짝 맑은 나무 벨 공명
-      bodyTone(t, { type: 'triangle', freq: f0, peak: amp * 0.48, attack: 0.0015, decay: dec, bend: 0.97, lp: 5200 });
-      bodyTone(t, { type: 'sine', freq: f0, ratio: 2.02, peak: amp * 0.19, attack: 0.0015, decay: dec * 0.7, lp: 6000 });
-      bodyTone(t, { type: 'sine', freq: f0, ratio: 2.98, peak: amp * 0.08, attack: 0.0012, decay: dec * 0.5 });
+      // 강박 — 맑은 나무 벨 공명 + 1~3kHz 대역의 펀치
+      bodyTone(t, { type: 'triangle', freq: f0, peak: amp * 0.68, attack: 0.0015, decay: dec, bend: 0.97, lp: 5200 });
+      bodyTone(t, { type: 'sine', freq: f0, ratio: 2.02, peak: amp * 0.3, attack: 0.0015, decay: dec * 0.75, lp: 6000 });
+      bodyTone(t, { type: 'sine', freq: f0, ratio: 2.98, peak: amp * 0.12, attack: 0.0012, decay: dec * 0.55 });
     } else if (level === 'sub') {
       // 세분박 — 아주 작고 둥근 틱
-      bodyTone(t, { type: 'sine', freq: f0, peak: amp * 0.6, attack: 0.001, decay: dec });
+      bodyTone(t, { type: 'sine', freq: f0, peak: amp * 0.7, attack: 0.001, decay: dec });
     } else {
       // 중강·약박 — 묵직한 똑/딱
-      bodyTone(t, { type: 'triangle', freq: f0, peak: amp * 0.5, attack: 0.0015, decay: dec, bend: 0.96, lp: 3400 });
-      bodyTone(t, { type: 'sine', freq: f0, ratio: 2.01, peak: amp * 0.1, attack: 0.0015, decay: dec * 0.6 });
+      bodyTone(t, { type: 'triangle', freq: f0, peak: amp * 0.7, attack: 0.0015, decay: dec, bend: 0.96, lp: 3600 });
+      bodyTone(t, { type: 'sine', freq: f0, ratio: 2.01, peak: amp * 0.16, attack: 0.0015, decay: dec * 0.65 });
     }
   }
 
-  /* 2) 디피 메트로놈 — 부드러운 사인 벨 · 2ms 소프트 어택 · 40ms 디케이 (C6/G5/C5) */
+  /* 2) 디피 메트로놈 — 부드러운 사인 벨 · 2ms 소프트 어택 (C6/G5/C5) */
   function clickPiano(t, level) {
     const f = { accent: 1046.5, secondary: 784.0, normal: 523.25, sub: 1568.0 }[level] || 523.25;
-    const amp = { accent: 0.58, secondary: 0.45, normal: 0.34, sub: 0.1 }[level] || 0.34;
-    const dec = level === 'sub' ? 0.016 : 0.04;
+    const amp = { accent: 0.75, secondary: 0.58, normal: 0.44, sub: 0.13 }[level] || 0.44;
+    const dec = level === 'sub' ? 0.02 : 0.05;
 
     bodyTone(t, { type: 'sine', freq: f, peak: amp, attack: 0.002, decay: dec });
-    bodyTone(t, { type: 'sine', freq: f, ratio: 2, peak: amp * 0.14, attack: 0.002, decay: dec * 0.6 });
+    // 휴대폰 스피커가 가장 잘 내는 1~2.5kHz 대역 배음으로 존재감을 준다
+    bodyTone(t, { type: 'sine', freq: f, ratio: 2, peak: amp * 0.32, attack: 0.002, decay: dec * 0.7 });
     if (level === 'accent') {
-      bodyTone(t, { type: 'sine', freq: f, ratio: 3, peak: amp * 0.05, attack: 0.002, decay: dec * 0.4 });
+      bodyTone(t, { type: 'sine', freq: f, ratio: 3, peak: amp * 0.14, attack: 0.002, decay: dec * 0.5 });
+      bodyTone(t, { type: 'triangle', freq: f, ratio: 2, peak: amp * 0.1, attack: 0.0015, decay: 0.014, lp: 6000 });
+    } else if (level === 'normal') {
+      // 낮은 약박(C5)은 휴대폰에서 잘 안 들리므로 2배음에 짧은 펀치를 더한다
+      bodyTone(t, { type: 'triangle', freq: f, ratio: 2, peak: amp * 0.1, attack: 0.0015, decay: 0.014, lp: 6000 });
     }
   }
 
-  /* 3) 드럼 스틱 — 1.8~2.5kHz 밴드패스의 깔끔한 어쿠스틱 틱, 치찰음 제거 */
+  /* 3) 드럼 스틱 — 1.4~4.6kHz 대역의 어쿠스틱 틱, 치찰음 제거 */
   function clickStick(t, level) {
     const accent = level === 'accent';
-    const amp = { accent: 1.05, secondary: 0.8, normal: 0.58, sub: 0.17 }[level] || 0.5;
+    const amp = { accent: 1.1, secondary: 0.86, normal: 0.66, sub: 0.2 }[level] || 0.5;
     const center = accent ? 2350 : (level === 'secondary' ? 2150 : 1950);
-    const dec = level === 'sub' ? 0.012 : (accent ? 0.042 : 0.03);
+    const dec = level === 'sub' ? 0.018 : (accent ? 0.05 : 0.038);
 
     noiseBurst(t, {
-      hp: 1500, bp: center, q: 1.0, lp: accent ? 3800 : 3300,
-      peak: amp * 0.6, attack: 0.001, decay: dec
+      hp: 1300, bp: center, q: 0.9, lp: accent ? 4200 : 3600,
+      peak: amp * 0.82, attack: 0.001, decay: dec
     });
-    // 스틱·림의 나무 몸통을 아주 짧게 얹어 딱딱함만 남긴다
-    bodyTone(t, { type: 'triangle', freq: accent ? 620 : 540, peak: amp * 0.15, attack: 0.001, decay: dec * 0.8, lp: 2200 });
+    // 스틱·림의 나무 몸통 — 700~800Hz 공명으로 휴대폰에서도 "딱"의 무게가 남는다
+    bodyTone(t, { type: 'triangle', freq: accent ? 780 : 700, peak: amp * 0.4, attack: 0.001, decay: dec * 0.9, lp: 2400 });
+    bodyTone(t, { type: 'sine', freq: accent ? 1800 : 1650, peak: amp * 0.28, attack: 0.001, decay: dec * 0.55, lp: 4000 });
   }
 
   /* 4) 소프트 클릭 — 피아노 건반 소리에 자연스럽게 묻히는 둥근 우드 팝 */
   function clickSoft(t, level) {
-    const amp = { accent: 0.5, secondary: 0.4, normal: 0.31, sub: 0.1 }[level] || 0.31;
+    const amp = { accent: 0.66, secondary: 0.53, normal: 0.41, sub: 0.13 }[level] || 0.41;
     const f0 = { accent: 560, secondary: 505, normal: 440, sub: 660 }[level] || 440;
-    const dec = level === 'sub' ? 0.012 : 0.036;
+    const dec = level === 'sub' ? 0.016 : 0.045;
 
-    bodyTone(t, { type: 'triangle', freq: f0, peak: amp, attack: 0.004, decay: dec, bend: 0.94, lp: 1600 });
-    bodyTone(t, { type: 'sine', freq: f0, ratio: 2, peak: amp * 0.12, attack: 0.003, decay: dec * 0.6, lp: 2600 });
+    bodyTone(t, { type: 'triangle', freq: f0, peak: amp, attack: 0.004, decay: dec, bend: 0.94, lp: 1700 });
+    bodyTone(t, { type: 'sine', freq: f0, ratio: 2, peak: amp * 0.3, attack: 0.003, decay: dec * 0.65, lp: 2800 });
+    // 휴대폰에서도 들리도록 배음에 짧은 펀치를 슬쩍 얹는다
+    bodyTone(t, { type: 'triangle', freq: f0, ratio: 3, peak: amp * 0.26, attack: 0.002, decay: dec * 0.55, lp: 4200 });
     noiseBurst(t, {
-      hp: 400, bp: 900, q: 0.8, lp: 2000,
-      peak: amp * 0.2, attack: 0.003, decay: dec * 0.5
+      hp: 500, bp: 1300, q: 0.85, lp: 3400,
+      peak: amp * 0.3, attack: 0.002, decay: dec * 0.55
     });
   }
 
@@ -1541,6 +1588,18 @@ select:focus{border-color:var(--blue)}
         if (v > p) p = v;
       }
       return Number(p.toFixed(4));
+    },
+    get level() {
+      if (!an) return null;
+      const buf = new Float32Array(an.fftSize);
+      an.getFloatTimeDomainData(buf);
+      let p = 0, s = 0;
+      for (let i = 0; i < buf.length; i++) {
+        const v = buf[i], a = v < 0 ? -v : v;
+        if (a > p) p = a;
+        s += v * v;
+      }
+      return { peak: Number(p.toFixed(4)), rms: Number(Math.sqrt(s / buf.length).toFixed(5)) };
     },
     get spectrum() {
       if (!an) return null;
