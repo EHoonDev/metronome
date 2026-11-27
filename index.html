@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>정밀 웹 메트로놈 · BPM 20–300, 모든 박자 | Precision Metronome</title>
+<meta name="description" content="피아노 연주자를 위한 정밀 웹 메트로놈. BPM 20–300, 빠르기말 연동, 1~16박·분모 2/4/8/16 자유 설정, 세분박(3연음·16분), 박자별 강약과 음색(우드블록·비프·림샷·마림바) 커스터마이징. 설치·로그인 없이 브라우저에서 바로.">
+<meta name="keywords" content="메트로놈, 온라인 메트로놈, 웹 메트로놈, metronome, BPM, 박자표, 탭 템포, 피아노 연습, 빠르기말, 세분박">
+<meta name="author" content="욜로후니">
+<meta name="robots" content="index, follow">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#080b11">
+<link rel="canonical" href="https://ehoondev.github.io/metronome/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23080b11'/%3E%3Cpath d='M32 12 L40 46 H24 Z' fill='%23e6b96b'/%3E%3Ccircle cx='32' cy='46' r='7' fill='%236a95ff'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="욜로후니">
+<meta property="og:title" content="정밀 웹 메트로놈 · BPM 20–300, 모든 박자">
+<meta property="og:description" content="BPM 20–300과 빠르기말 연동, 1~16박 자유 설정, 세분박, 박자별 강약·음색 커스터마이징. Web Audio 기반 정밀 타이밍.">
+<meta property="og:url" content="https://ehoondev.github.io/metronome/">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:image" content="https://ehoondev.github.io/metronome/preview.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="정밀 웹 메트로놈 화면 — BPM 112, 4/4 박자, 박자별 강약 표시">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ehoondev.github.io/metronome/preview.png">
+<meta name="twitter:title" content="정밀 웹 메트로놈 · BPM 20–300">
+<meta name="twitter:description" content="피아노 연주자를 위한 정밀 웹 메트로놈. 박자별 강약과 음색까지 커스터마이징.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "정밀 웹 메트로놈",
+  "alternateName": "Precision Metronome",
+  "applicationCategory": "MusicApplication",
+  "operatingSystem": "Any (Web Browser)",
+  "inLanguage": "ko",
+  "description": "BPM 20–300, 빠르기말 연동, 1~16박 자유 설정, 세분박, 박자별 강약·음색 커스터마이징을 지원하는 웹 메트로놈.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "KRW" },
+  "featureList": "BPM 20-300, Tap Tempo, 빠르기말 연동, 1~16박/분모 자유 설정, 세분박(8분·3연음·16분), 박자별 강약과 음색 설정, Web Audio 정밀 스케줄러"
+}
+</script>
+<style>
+/* ============================================================
+   디자인 토큰
+   ============================================================ */
+:root{
+  --bg:#080b11;
+  --bg-2:#0d121b;
+  --panel:#121824;
+  --panel-2:#18202f;
+  --line:rgba(255,255,255,.075);
+  --line-strong:rgba(255,255,255,.15);
+  --text:#eef2f9;
+  --muted:#929cb0;
+  --muted-2:#6b7488;
+  --gold:#e6b96b;
+  --gold-bright:#f8dfae;
+  --gold-deep:#b98a3f;
+  --gold-ink:#241a06;
+  --blue:#6a95ff;
+  --blue-deep:#3d63c9;
+  --shadow:0 24px 60px -28px rgba(0,0,0,.95);
+  --radius:20px;
+  --radius-sm:12px;
+}
+html[data-theme="light"]{
+  --bg:#f1eee7;
+  --bg-2:#e8e3d9;
+  --panel:#ffffff;
+  --panel-2:#f7f4ed;
+  --line:rgba(24,30,44,.10);
+  --line-strong:rgba(24,30,44,.20);
+  --text:#171b26;
+  --muted:#5c6577;
+  --muted-2:#8a93a5;
+  --gold:#b8862f;
+  --gold-bright:#8a5f16;
+  --gold-deep:#8a5f16;
+  --gold-ink:#ffffff;
+  --blue:#3a6bd8;
+  --blue-deep:#2b52a8;
+  --shadow:0 20px 44px -26px rgba(40,35,20,.45);
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:"Noto Sans CJK KR","Noto Sans KR","Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI",system-ui,sans-serif;
+  color:var(--text);
+  background-color:var(--bg);
+  background-image:
+    radial-gradient(900px 480px at 12% -12%, rgba(106,149,255,.16), transparent 62%),
+    radial-gradient(760px 420px at 96% -4%, rgba(230,185,107,.13), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,.02), transparent 240px);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+  transition:background-color .25s ease, color .25s ease;
+}
+html[data-theme="light"] body{
+  background-image:
+    radial-gradient(900px 480px at 12% -12%, rgba(58,107,216,.10), transparent 62%),
+    radial-gradient(760px 420px at 96% -4%, rgba(184,134,47,.14), transparent 60%);
+}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+.app{max-width:1200px;margin:0 auto;padding:20px 20px 34px}
+
+/* ============================================================
+   헤더
+   ============================================================ */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:2px 2px 18px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.logo{
+  width:42px;height:42px;flex:0 0 42px;border-radius:13px;display:grid;place-items:center;
+  background:linear-gradient(150deg,var(--gold-bright),var(--gold) 45%,var(--gold-deep));
+  color:var(--gold-ink);font-size:21px;line-height:1;
+  box-shadow:0 10px 24px -12px rgba(230,185,107,.9), inset 0 1px 0 rgba(255,255,255,.45);
+}
+h1{margin:0;font-size:clamp(16px,2vw,19px);font-weight:800;letter-spacing:-.01em;line-height:1.15}
+h1 small{
+  display:block;margin-top:4px;font-size:10px;font-weight:700;letter-spacing:.18em;
+  color:var(--muted-2);text-transform:uppercase;white-space:nowrap;
+}
+.top-actions{display:flex;align-items:center;gap:8px}
+.icon-btn{
+  width:42px;height:42px;border-radius:12px;border:1px solid var(--line);
+  background:rgba(255,255,255,.04);display:grid;place-items:center;font-size:17px;
+  transition:background .16s, border-color .16s, transform .16s;
+}
+.icon-btn:hover{background:rgba(255,255,255,.09);border-color:var(--line-strong)}
+.icon-btn:active{transform:scale(.95)}
+
+/* ============================================================
+   카드 공통
+   ============================================================ */
+.card{
+  position:relative;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,0) 40%),
+    var(--panel);
+  box-shadow:var(--shadow);
+  padding:16px 18px 18px;
+  min-width:0;
+}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.label{font-size:10.5px;font-weight:800;letter-spacing:.16em;color:var(--muted-2);text-transform:uppercase}
+.badge{
+  font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--muted);
+  padding:3px 9px;border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.03);
+  font-variant-numeric:tabular-nums;
+}
+
+/* ============================================================
+   무대: BPM + 박자 시각화
+   ============================================================ */
+.stage{display:grid;grid-template-columns:minmax(0,.94fr) minmax(0,1.06fr);gap:16px;align-items:stretch}
+
+/* --- BPM 카드 --- */
+.bpm-card{display:flex;flex-direction:column;gap:12px}
+.term{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;min-height:28px}
+#termEn{font-size:clamp(21px,2.6vw,27px);font-weight:800;letter-spacing:.01em;color:var(--gold-bright);line-height:1}
+.term .dot{color:var(--muted-2);font-weight:700}
+#termKo{font-size:12.5px;color:var(--muted);font-weight:600}
+
+.bpm-row{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto auto;align-items:center;gap:7px}
+.step{
+  height:54px;min-width:47px;padding:0 9px;border-radius:13px;
+  border:1px solid var(--line);background:rgba(255,255,255,.045);
+  font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text);
+  transition:background .14s, border-color .14s, transform .1s;
+}
+.step:hover{background:rgba(255,255,255,.1);border-color:var(--line-strong)}
+.step:active{transform:translateY(1px) scale(.97)}
+.bpm-core{display:flex;align-items:flex-end;justify-content:center;gap:5px;min-width:0}
+#bpmInput{
+  width:3.15ch;min-width:0;padding:0;border:0;background:transparent;
+  font-size:clamp(42px,6.6vw,72px);font-weight:800;line-height:.9;letter-spacing:-.045em;
+  text-align:right;color:var(--text);font-variant-numeric:tabular-nums;
+  -moz-appearance:textfield;
+}
+#bpmInput::-webkit-outer-spin-button,#bpmInput::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+#bpmInput:focus{outline:none;color:var(--gold-bright)}
+.bpm-core .unit{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--muted-2);padding-bottom:9px}
+
+.range{
+  -webkit-appearance:none;appearance:none;width:100%;height:26px;margin:0;background:transparent;cursor:pointer;
+  --pct:33%;
+}
+.range::-webkit-slider-runnable-track{
+  height:8px;border-radius:99px;
+  background:linear-gradient(90deg, var(--gold-deep) 0%, var(--gold) var(--pct), rgba(128,140,165,.22) var(--pct), rgba(128,140,165,.22) 100%);
+}
+.range::-webkit-slider-thumb{
+  -webkit-appearance:none;width:22px;height:22px;margin-top:-7px;border-radius:50%;
+  background:#fff;border:3px solid var(--gold);
+  box-shadow:0 0 0 5px rgba(230,185,107,.16), 0 4px 10px rgba(0,0,0,.45);
+}
+.range::-moz-range-track{height:8px;border-radius:99px;background:rgba(128,140,165,.22)}
+.range::-moz-range-progress{height:8px;border-radius:99px;background:var(--gold)}
+.range::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--gold)}
+.scale{display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:var(--muted-2);letter-spacing:.04em;margin-top:-6px;font-variant-numeric:tabular-nums}
+
+.tap{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;
+  padding:13px 15px;border-radius:14px;border:1px dashed rgba(230,185,107,.5);
+  background:rgba(230,185,107,.07);color:var(--gold-bright);
+  font-size:13px;font-weight:800;letter-spacing:.05em;
+  transition:background .12s, transform .1s, border-color .12s;
+  margin-top:auto;
+}
+.tap:hover{background:rgba(230,185,107,.13)}
+.tap.tapped{background:rgba(230,185,107,.26);border-color:var(--gold);transform:scale(.994)}
+.tap small{font-size:11px;font-weight:600;letter-spacing:0;color:var(--muted)}
+
+/* --- 시각화 카드 --- */
+.visual{display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.stage-top{display:flex;align-items:center;justify-content:space-between;gap:8px;height:clamp(88px,11.5vh,116px)}
+.pendulum{position:relative;width:132px;height:100%;display:flex;justify-content:center;flex:0 0 auto}
+.pendulum::before{
+  content:"";position:absolute;top:1px;left:50%;width:16px;height:16px;margin-left:-8px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, var(--panel-2), #0a0e16);
+  border:1px solid var(--line-strong);z-index:3;
+  box-shadow:0 2px 6px rgba(0,0,0,.4);
+}
+.pendulum::after{   /* 바닥선 */
+  content:"";position:absolute;left:50%;bottom:0;width:72px;height:4px;margin-left:-36px;border-radius:99px;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
+}
+.pend-arm{
+  position:absolute;top:8px;left:50%;width:4px;height:calc(100% - 18px);
+  transform-origin:50% 0;transform:rotate(0deg);border-radius:3px;
+  background:linear-gradient(180deg, rgba(255,255,255,.8), rgba(230,185,107,.85) 45%, rgba(185,138,63,.45));
+  box-shadow:0 0 12px rgba(230,185,107,.3);
+}
+.pendulum.anim .pend-arm{transition:transform .55s cubic-bezier(.3,1.3,.5,1)}
+.pend-bob{
+  position:absolute;top:22%;left:50%;width:30px;height:30px;margin-left:-15px;border-radius:50%;
+  background:radial-gradient(circle at 34% 28%, #fff8e7, var(--gold) 62%, var(--gold-deep));
+  box-shadow:0 0 22px rgba(230,185,107,.6), inset 0 -2px 5px rgba(0,0,0,.28);
+}
+.count{display:flex;align-items:baseline;gap:6px;font-variant-numeric:tabular-nums;line-height:1;flex:0 0 auto}
+#curBeat{font-size:clamp(44px,6.4vw,68px);font-weight:800;letter-spacing:-.05em;color:var(--gold-bright)}
+.count .slash{font-size:21px;font-weight:700;color:var(--muted-2);margin:0 2px}
+#numBeats{font-size:24px;font-weight:800;color:var(--muted);letter-spacing:-.02em}
+.count.pop #curBeat{animation:numPop .22s cubic-bezier(.2,.9,.3,1)}
+@keyframes numPop{0%{transform:translateY(3px) scale(1.14);color:#fff}100%{transform:none}}
+
+.beat-grid{display:flex;align-items:stretch;gap:clamp(3px,0.9vw,7px);height:clamp(96px,13.5vh,124px);min-width:0}
+.beat{
+  flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:5px;
+  padding:0;background:none;border:0;
+}
+.beat-track{
+  position:relative;flex:1 1 auto;display:flex;align-items:flex-end;min-height:0;
+  border-radius:9px;background:rgba(128,140,165,.09);overflow:hidden;
+  transition:box-shadow .15s, background .15s;
+}
+.beat:hover .beat-track{background:rgba(128,140,165,.17)}
+.beat-bar{
+  width:100%;height:var(--h,46%);border-radius:8px 8px 5px 5px;
+  transition:height .2s cubic-bezier(.2,.9,.3,1), background .2s;
+}
+.beat[data-state="accent"] .beat-bar{--h:100%;background:linear-gradient(180deg,#ffedc8,var(--gold) 55%,var(--gold-deep));box-shadow:0 0 16px rgba(230,185,107,.45)}
+.beat[data-state="secondary"] .beat-bar{--h:74%;background:linear-gradient(180deg,#b9cdff,var(--blue) 60%,var(--blue-deep))}
+.beat[data-state="normal"] .beat-bar{--h:46%;background:linear-gradient(180deg,#8695b1,#4d5a70)}
+.beat[data-state="mute"] .beat-bar{--h:11%;background:repeating-linear-gradient(45deg,rgba(150,160,180,.55) 0 3px,transparent 3px 6px)}
+.beat-idx{
+  font-size:10.5px;font-weight:800;line-height:1;text-align:center;color:var(--muted-2);
+  font-variant-numeric:tabular-nums;transition:color .15s;
+}
+.beat[data-state="accent"] .beat-idx{color:var(--gold)}
+.beat[data-state="secondary"] .beat-idx{color:var(--blue)}
+.beat.is-current .beat-track{
+  background:
+    radial-gradient(120% 88% at 50% 100%, rgba(255,255,255,.26), rgba(255,255,255,0) 76%),
+    rgba(128,140,165,.09);
+}
+.beat.is-current .beat-bar{filter:brightness(1.1)}
+.beat.is-current .beat-idx{color:var(--text)}
+.beat.hit .beat-track{animation:beatPop .26s cubic-bezier(.2,.85,.3,1)}
+@keyframes beatPop{0%{transform:translateY(-3px) scale(1.06);filter:brightness(1.55)}100%{transform:none;filter:none}}
+
+.bar{height:6px;border-radius:99px;background:rgba(128,140,165,.16);overflow:hidden}
+.bar-fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--gold));transition:none}
+.legend{display:flex;flex-wrap:wrap;gap:10px 14px;font-size:10.5px;font-weight:700;color:var(--muted-2)}
+.lg{display:inline-flex;align-items:center;gap:5px}
+.lg .sw{width:9px;height:9px;border-radius:3px;display:inline-block}
+.sw.accent{background:linear-gradient(180deg,#ffedc8,var(--gold))}
+.sw.secondary{background:linear-gradient(180deg,#b9cdff,var(--blue))}
+.sw.normal{background:linear-gradient(180deg,#8695b1,#4d5a70)}
+.sw.mute{background:repeating-linear-gradient(45deg,rgba(150,160,180,.6) 0 2px,transparent 2px 4px);border:1px solid rgba(150,160,180,.35)}
+.lg.tip{color:var(--gold);margin-left:auto}
+
+/* ============================================================
+   재생 바
+   ============================================================ */
+.transport{
+  display:flex;align-items:center;gap:16px;margin-top:16px;padding:12px 16px;
+  border:1px solid var(--line);border-radius:22px;background:
+    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0) 50%), var(--panel);
+  box-shadow:var(--shadow);
+}
+.play{
+  display:inline-flex;align-items:center;gap:11px;height:62px;padding:0 26px 0 22px;flex:0 0 auto;
+  border-radius:18px;background:linear-gradient(150deg,#ffe8bd,var(--gold) 48%,var(--gold-deep));
+  color:var(--gold-ink);font-size:16px;font-weight:900;letter-spacing:.02em;
+  box-shadow:0 16px 34px -18px rgba(230,185,107,.95), inset 0 1px 0 rgba(255,255,255,.5);
+  transition:transform .12s, filter .16s, background .2s, box-shadow .2s;
+}
+.play:hover{filter:brightness(1.06)}
+.play:active{transform:translateY(1px) scale(.99)}
+.play .icon{font-size:15px;line-height:1;position:relative;top:.5px}
+.play.playing{
+  background:linear-gradient(150deg,#ff9f93,#e1564b 60%,#c33a30);color:#fff;
+  box-shadow:0 16px 34px -18px rgba(225,86,75,.95), inset 0 1px 0 rgba(255,255,255,.35);
+}
+.transport-text{min-width:0;flex:1 1 auto}
+.status{font-size:13.5px;font-weight:800;letter-spacing:.01em;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hints{margin-top:5px;font-size:11px;color:var(--muted-2);font-weight:600;display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+kbd{
+  display:inline-block;padding:1px 6px;border-radius:5px;border:1px solid var(--line-strong);
+  background:rgba(255,255,255,.06);font-family:inherit;font-size:10px;font-weight:800;color:var(--muted);
+}
+.engine{
+  flex:0 0 auto;font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--muted-2);
+  padding:6px 10px;border-radius:99px;border:1px solid var(--line);text-transform:uppercase;
+}
+
+/* ============================================================
+   컨트롤 그리드
+   ============================================================ */
+.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{
+  border:1px solid var(--line);background:rgba(255,255,255,.035);border-radius:11px;
+  padding:8px 11px;font-size:12.5px;font-weight:700;color:var(--muted);
+  transition:background .14s, border-color .14s, color .14s, transform .1s;
+  white-space:nowrap;
+}
+.chip:hover{background:rgba(255,255,255,.085);color:var(--text);border-color:var(--line-strong)}
+.chip:active{transform:scale(.97)}
+.chip.on{
+  background:linear-gradient(180deg, rgba(230,185,107,.24), rgba(230,185,107,.12));
+  border-color:rgba(230,185,107,.65);color:var(--gold-bright);
+  box-shadow:0 0 0 1px rgba(230,185,107,.18) inset;
+}
+.tempo-chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:7px;width:100%}
+.tempo-chip{display:flex;align-items:baseline;justify-content:space-between;gap:6px;padding:9px 11px}
+.tempo-chip b{font-size:12.5px;letter-spacing:.01em;font-weight:800}
+.tempo-chip span{font-size:10.5px;font-weight:800;color:var(--muted-2);font-variant-numeric:tabular-nums}
+.tempo-chip.on span{color:var(--gold)}
+.meter-chips .chip{font-variant-numeric:tabular-nums}
+.chip.wide{flex:1 1 auto;text-align:center;justify-content:center}
+
+.meter-row{display:flex;align-items:flex-end;gap:9px;margin-top:12px;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field.grow{flex:1 1 150px}
+.field > span{font-size:10px;font-weight:800;letter-spacing:.12em;color:var(--muted-2);text-transform:uppercase}
+select{
+  appearance:none;-webkit-appearance:none;
+  height:38px;padding:0 28px 0 11px;border-radius:10px;border:1px solid var(--line);
+  background-color:rgba(255,255,255,.045);
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 16px, calc(100% - 10px) 16px;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+  font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;min-width:74px;cursor:pointer;
+}
+select:focus{border-color:var(--blue)}
+.slash-big{font-size:20px;font-weight:800;color:var(--muted-2);padding-bottom:6px}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.03)}
+.seg button{
+  flex:1 1 0;padding:0 8px;height:38px;font-size:11.5px;font-weight:800;color:var(--muted);
+  border-right:1px solid var(--line);transition:background .14s,color .14s;white-space:nowrap;
+}
+.seg button:last-child{border-right:0}
+.seg button:hover{background:rgba(255,255,255,.07);color:var(--text)}
+.seg button.on{background:linear-gradient(180deg, rgba(230,185,107,.24), rgba(230,185,107,.1));color:var(--gold-bright)}
+.hint{margin:11px 0 0;font-size:11.5px;line-height:1.55;color:var(--muted-2);font-weight:600}
+.hint b{color:var(--muted);font-weight:800}
+
+.timbre-chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;width:100%}
+.vol-row{display:flex;align-items:center;gap:9px;margin-top:13px}
+.vol-ico{font-size:13px;color:var(--muted-2);flex:0 0 auto}
+.vol-row .range{--pct:70%}
+.vol-val{font-size:11px;font-weight:800;color:var(--muted);min-width:26px;text-align:right;font-variant-numeric:tabular-nums}
+
+.switch-row{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:13px;
+  padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.03);
+  font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;user-select:none;
+}
+.switch-row input{position:absolute;opacity:0;width:0;height:0}
+.switch{position:relative;width:42px;height:24px;border-radius:99px;background:rgba(128,140,165,.35);transition:background .18s;flex:0 0 auto}
+.switch::after{
+  content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .18s cubic-bezier(.3,1.3,.5,1);
+}
+.switch-row input:checked + .switch{background:linear-gradient(90deg,var(--gold-deep),var(--gold))}
+.switch-row input:checked + .switch::after{transform:translateX(18px)}
+.switch-row input:focus-visible + .switch{outline:2px solid var(--blue);outline-offset:2px}
+
+/* ============================================================
+   하단
+   ============================================================ */
+.foot{margin-top:22px;text-align:center;color:var(--muted-2);font-size:10.5px;line-height:1.7;font-weight:600}
+.foot p{margin:2px 0}
+.ad-slot{min-height:90px;margin-bottom:14px}
+
+.flash{
+  position:fixed;inset:0;pointer-events:none;z-index:70;opacity:0;
+  background:radial-gradient(circle at 50% 40%, rgba(230,185,107,.5), rgba(230,185,107,0) 58%);
+}
+.flash.on{animation:flashFade .34s ease-out}
+.flash.on.strong{animation:flashFadeStrong .44s ease-out}
+@keyframes flashFade{from{opacity:.42}to{opacity:0}}
+@keyframes flashFadeStrong{from{opacity:.72}to{opacity:0}}
+
+/* ============================================================
+   반응형
+   ============================================================ */
+@media (max-width:900px){
+  .stage{grid-template-columns:minmax(0,1fr)}
+  .controls{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:520px){
+  .app{padding:14px 13px 26px}
+  .card{padding:14px 14px 15px;border-radius:18px}
+  .topbar{padding-bottom:14px;gap:10px}
+  h1 small{letter-spacing:.12em;font-size:9px}
+  .bpm-row{gap:5px}
+  .step{height:48px;min-width:41px;padding:0 6px;border-radius:11px;font-size:13px}
+  #bpmInput{font-size:clamp(38px,12vw,54px);width:3.1ch}
+  .bpm-core .unit{padding-bottom:6px;font-size:10px}
+  .stage-top{height:82px}
+  .pendulum{width:104px}
+  .beat-grid{height:104px;gap:3px}
+  .beat-idx{font-size:9px}
+  .transport{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:4px 12px;
+             padding:11px 12px;border-radius:18px}
+  .play{height:54px;padding:0 20px 0 18px;font-size:15px;border-radius:15px;grid-column:1;justify-self:start}
+  .transport-text{grid-column:2;min-width:0}
+  .status{white-space:normal;line-height:1.35}
+  .engine{display:none}
+  .hints{display:none}
+  .tempo-chip{padding:8px 9px}
+  .tempo-chip b{font-size:11.5px}
+  .meter-row{gap:7px}
+  select{min-width:64px}
+  .lg.tip{margin-left:0}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001s !important;animation-iteration-count:1 !important;transition-duration:.001s !important}
+}
+</style>
+</head>
+<body>
+<div class="flash" id="flash" aria-hidden="true"></div>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">♩</div>
+      <div>
+        <h1>정밀 메트로놈<small>Precision Metronome · Web Audio</small></h1>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button id="themeBtn" class="icon-btn" type="button" aria-label="라이트/다크 테마 전환" title="테마 전환">🌙</button>
+    </div>
+  </header>
+
+  <main class="stage">
+    <!-- ================= 속도 ================= -->
+    <section class="card bpm-card" aria-label="속도 조절">
+      <div class="card-head">
+        <span class="label">Tempo · 속도</span>
+        <span class="badge" id="bpmBadge">20–300</span>
+      </div>
+
+      <div class="term" id="tempoTerm">
+        <span id="termEn">Moderato</span><span class="dot">·</span><span id="termKo">보통 빠르기로</span>
+      </div>
+
+      <div class="bpm-row">
+        <button class="step" id="bpmDown5" type="button" aria-label="BPM 5 감소">−5</button>
+        <button class="step" id="bpmDown1" type="button" aria-label="BPM 1 감소">−1</button>
+        <div class="bpm-core">
+          <input id="bpmInput" type="text" inputmode="numeric" maxlength="3" autocomplete="off"
+                 spellcheck="false" aria-label="분당 박자 수(BPM)" value="112">
+          <span class="unit">BPM</span>
+        </div>
+        <button class="step" id="bpmUp1" type="button" aria-label="BPM 1 증가">+1</button>
+        <button class="step" id="bpmUp5" type="button" aria-label="BPM 5 증가">+5</button>
+      </div>
+
+      <input id="bpmSlider" class="range" type="range" min="20" max="300" step="1" value="112" aria-label="BPM 슬라이더">
+      <div class="scale"><span>20</span><span>60</span><span>120</span><span>180</span><span>240</span><span>300</span></div>
+
+      <button id="tapBtn" class="tap" type="button">
+        <span>TAP TEMPO · 탭 템포</span>
+        <small id="tapHint">박자에 맞춰 두 번 이상 탭</small>
+      </button>
+    </section>
+
+    <!-- ================= 박자 ================= -->
+    <section class="card visual" aria-label="박자 시각 표시">
+      <div class="card-head">
+        <span class="label">Beat · 박자</span>
+        <span class="badge" id="meterBadge">4/4</span>
+      </div>
+
+      <div class="stage-top">
+        <div class="pendulum" id="pendulum"><div class="pend-arm" id="pendArm"><i class="pend-bob"></i></div></div>
+        <div class="count" id="count">
+          <span id="curBeat">1</span><span class="slash">/</span><span id="numBeats">4</span>
+        </div>
+      </div>
+
+      <div class="beat-grid" id="beatGrid" role="group" aria-label="박자별 소리 설정"></div>
+      <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+
+      <div class="legend">
+        <span class="lg"><i class="sw accent"></i>강박</span>
+        <span class="lg"><i class="sw secondary"></i>중강박</span>
+        <span class="lg"><i class="sw normal"></i>약박</span>
+        <span class="lg"><i class="sw mute"></i>무음</span>
+        <span class="lg tip">박을 눌러 변경</span>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================= 재생 ================= -->
+  <section class="transport" aria-label="재생 컨트롤">
+    <button id="playBtn" class="play" type="button" aria-pressed="false">
+      <span class="icon" id="playIcon">▶</span><span class="label" id="playLabel">시작</span>
+    </button>
+    <div class="transport-text">
+      <div class="status" id="status" aria-live="polite">정지 · 4/4 · 112 BPM</div>
+      <div class="hints">
+        <kbd>Space</kbd> 시작/정지 · <kbd>↑</kbd><kbd>↓</kbd> BPM ±1 · <kbd>Shift</kbd>+<kbd>↑</kbd> ±5
+      </div>
+    </div>
+    <div class="engine" title="AudioContext.currentTime 기반 Lookahead 스케줄러">25ms · 0.1s ahead</div>
+  </section>
+
+  <!-- ================= 컨트롤 ================= -->
+  <section class="controls">
+    <section class="card" aria-label="빠르기말">
+      <div class="card-head"><span class="label">Tempo marking · 빠르기말</span></div>
+      <div class="chips tempo-chips" id="tempoChips"></div>
+      <p class="hint">빠르기말을 누르면 그 속도로 이동하고, BPM을 직접 바꾸면 현재 구간의 빠르기말이 위에 표시됩니다.</p>
+    </section>
+
+    <section class="card" aria-label="박자표">
+      <div class="card-head"><span class="label">Time signature · 박자표</span></div>
+      <div class="chips meter-chips" id="meterChips"></div>
+      <div class="meter-row">
+        <label class="field"><span>분자</span><select id="numSel" aria-label="분자(한 마디의 박 수)"></select></label>
+        <span class="slash-big">/</span>
+        <label class="field"><span>분모</span><select id="denSel" aria-label="분모(박자 단위)"></select></label>
+        <div class="field grow">
+          <span>세분박</span>
+          <div class="seg" id="subSeg" role="group" aria-label="세분박">
+            <button type="button" data-sub="1" class="on">없음</button>
+            <button type="button" data-sub="2">8분</button>
+            <button type="button" data-sub="3">3연음</button>
+            <button type="button" data-sub="4">16분</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" aria-label="박자별 소리">
+      <div class="card-head"><span class="label">Beat sound · 박자별 소리</span></div>
+      <div class="chips">
+        <button class="chip wide" type="button" data-beatpreset="downbeat">첫 박만 강세</button>
+        <button class="chip wide" type="button" data-beatpreset="uniform">모든 박 동일</button>
+        <button class="chip wide" type="button" data-beatpreset="sixeight">6/8 (1·4박 강세)</button>
+      </div>
+      <p class="hint">위 박자 막대를 누르면 <b>강박 → 중강박 → 약박 → 무음</b> 순으로 바뀝니다. 박마다 다른 소리로 연습 패턴을 만들 수 있습니다.</p>
+    </section>
+
+    <section class="card" aria-label="음색과 볼륨">
+      <div class="card-head"><span class="label">Sound · 음색과 볼륨</span></div>
+      <div class="chips timbre-chips" id="timbreChips"></div>
+      <div class="vol-row">
+        <span class="vol-ico" aria-hidden="true">🔈</span>
+        <input id="volume" class="range" type="range" min="0" max="100" step="1" value="70" aria-label="볼륨">
+        <span class="vol-val" id="volVal">70</span>
+      </div>
+      <label class="switch-row" for="flashToggle">
+        <span>화면 플래시</span>
+        <input type="checkbox" id="flashToggle" checked>
+        <i class="switch" aria-hidden="true"></i>
+      </label>
+    </section>
+  </section>
+
+  <footer class="foot">
+    <!-- ▼ 애드센스 슬롯 (배포 후 아래 div 의 hidden 을 풀고 ins 태그로 교체) -->
+    <div id="ad-bottom" class="ad-slot" data-ad-slot="bottom" hidden></div>
+    <p>모든 소리는 Web Audio API로 실시간 합성합니다 · 외부 오디오 파일·CDN 없음</p>
+    <p>© 2026 욜로후니 · 정밀 웹 메트로놈</p>
+  </footer>
+</div>
+
+<noscript><p style="text-align:center;padding:20px">이 메트로놈은 JavaScript가 필요합니다.</p></noscript>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ==========================================================
+     0. 상수 · 상태
+     ========================================================== */
+  const $ = (sel, root) => (root || document).querySelector(sel);
+  const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+
+  const STORAGE_KEY = 'precision-metronome-settings-v1';
+  const MIN_BPM = 20, MAX_BPM = 300;
+  const MAX_ANGLE = 26;
+  const LOOKAHEAD_VISIBLE = 0.1;   // scheduleAheadTime (s)
+  const LOOKAHEAD_HIDDEN = 1.5;    // 백그라운드 탭에서 setInterval 이 1s 로 제한될 때 대비
+  const SCHED_INTERVAL = 25;       // ms
+
+  // 빠르기말 — bpm 은 해당 표기의 대표 속도
+  const TEMPOS = [
+    { en: 'Grave',       ko: '장중하게, 매우 느리게',  bpm: 40 },
+    { en: 'Largo',       ko: '폭넓고 느리게',          bpm: 45 },
+    { en: 'Larghetto',   ko: '조금 느리게',            bpm: 63 },
+    { en: 'Adagio',      ko: '느리게, 침착하게',        bpm: 70 },
+    { en: 'Andante',     ko: '느리게 걷는 속도로',      bpm: 90 },
+    { en: 'Moderato',    ko: '보통 빠르기로',          bpm: 112 },
+    { en: 'Allegretto',  ko: '조금 빠르게',            bpm: 116 },
+    { en: 'Allegro',     ko: '빠르고 경쾌하게',         bpm: 136 },
+    { en: 'Vivace',      ko: '생동감 있게',            bpm: 166 },
+    { en: 'Presto',      ko: '매우 빠르게',            bpm: 184 },
+    { en: 'Prestissimo', ko: '가능한 한 빠르게',        bpm: 208 }
+  ];
+
+  const METER_PRESETS = [[2, 4], [3, 4], [4, 4], [5, 4], [6, 8], [7, 8], [9, 8], [12, 8]];
+  const DENS = [2, 4, 8, 16];
+
+  const LEVELS = ['accent', 'secondary', 'normal', 'mute'];
+  const LEVEL_KO = { accent: '강박', secondary: '중강박', normal: '약박', mute: '무음' };
+
+  const TIMBRES = [
+    { id: 'wood',    name: '우드블록',  desc: '딱딱이·클래식' },
+    { id: 'beep',    name: '디지털 비프', desc: '깔끔한 사인톤' },
+    { id: 'rim',     name: '드럼 림샷',  desc: '짧고 날카롭게' },
+    { id: 'marimba', name: '마림바',    desc: '부드러운 나무 소리' }
+  ];
+
+  const state = {
+    bpm: 112,
+    num: 4,
+    den: 4,
+    subdiv: 1,
+    pattern: (function () { const a = new Array(16).fill('normal'); a[0] = 'accent'; return a; })(),
+    timbre: 'wood',
+    volume: 70,
+    flash: true,
+    theme: 'dark'
+  };
+
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+  /* ==========================================================
+     1. DOM
+     ========================================================== */
+  const el = {
+    flash: $('#flash'),
+    themeBtn: $('#themeBtn'),
+    termEn: $('#termEn'), termKo: $('#termKo'), termBox: $('#tempoTerm'),
+    bpmInput: $('#bpmInput'), bpmSlider: $('#bpmSlider'), bpmBadge: $('#bpmBadge'),
+    tapBtn: $('#tapBtn'), tapHint: $('#tapHint'),
+    pendArm: $('#pendArm'), pendulum: $('#pendulum'),
+    beatGrid: $('#beatGrid'), curBeat: $('#curBeat'), numBeats: $('#numBeats'), count: $('#count'),
+    barFill: $('#barFill'), meterBadge: $('#meterBadge'),
+    playBtn: $('#playBtn'), playIcon: $('#playIcon'), playLabel: $('#playLabel'), status: $('#status'),
+    tempoChips: $('#tempoChips'), meterChips: $('#meterChips'), timbreChips: $('#timbreChips'),
+    numSel: $('#numSel'), denSel: $('#denSel'), subSeg: $('#subSeg'),
+    volume: $('#volume'), volVal: $('#volVal'), flashToggle: $('#flashToggle')
+  };
+
+  /* ==========================================================
+     2. 오디오 엔진
+     ========================================================== */
+  let ctx = null, master = null, comp = null, noiseBuf = null;
+
+  function initAudio() {
+    if (ctx) return ctx;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    ctx = new AC();
+    comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -10;
+    comp.knee.value = 18;
+    comp.ratio.value = 4;
+    comp.attack.value = 0.002;
+    comp.release.value = 0.12;
+    master = ctx.createGain();
+    master.gain.value = volumeToGain(state.volume);
+    master.connect(comp);
+    comp.connect(ctx.destination);
+    // 클릭용 화이트노이즈 1초 버퍼
+    const len = Math.floor(ctx.sampleRate * 0.5);
+    noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    return ctx;
+  }
+
+  function volumeToGain(v) {
+    return Math.pow(clamp(v, 0, 100) / 100, 1.5) * 1.15;
+  }
+
+  const GAIN = { accent: 1.0, secondary: 0.72, normal: 0.5, sub: 0.2 };
+  const PITCH = { accent: 1.27, secondary: 1.11, normal: 1.0, sub: 1.0 };
+
+  function noiseSource() {
+    const s = ctx.createBufferSource();
+    s.buffer = noiseBuf;
+    return s;
+  }
+
+  /* 음색별 합성 — 외부 파일 없이 전부 오실레이터·노이즈 */
+  function playClick(when, level) {
+    if (!ctx) return;
+    const amp = GAIN[level] || 0.5;
+    const p = PITCH[level] || 1;
+    switch (state.timbre) {
+      case 'beep':    clickBeep(when, amp, p); break;
+      case 'rim':     clickRim(when, amp, p); break;
+      case 'marimba': clickMarimba(when, amp, p); break;
+      default:        clickWood(when, amp, p);
+    }
+  }
+
+  function clickWood(t, amp, p) {
+    const f = 1150 * p;
+    const o = ctx.createOscillator();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(f, t);
+    o.frequency.exponentialRampToValueAtTime(f * 0.68, t + 0.05);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, amp * 0.85), t + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.075);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.1);
+
+    const n = noiseSource();
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = 2400 * p; bp.Q.value = 1.1;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(amp * 0.55, t);
+    ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.028);
+    n.connect(bp); bp.connect(ng); ng.connect(master);
+    n.start(t); n.stop(t + 0.04);
+  }
+
+  function clickBeep(t, amp, p) {
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(1000 * p, t);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, amp * 0.6), t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.16);
+
+    const o2 = ctx.createOscillator();
+    o2.type = 'sine';
+    o2.frequency.setValueAtTime(2000 * p, t);
+    const g2 = ctx.createGain();
+    g2.gain.setValueAtTime(0.0001, t);
+    g2.gain.exponentialRampToValueAtTime(Math.max(0.0002, amp * 0.12), t + 0.003);
+    g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+    o2.connect(g2); g2.connect(master);
+    o2.start(t); o2.stop(t + 0.07);
+  }
+
+  function clickRim(t, amp, p) {
+    const n = noiseSource();
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 1400 * p;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = 2600 * p; bp.Q.value = 0.9;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(Math.max(0.0002, amp * 0.9), t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+    n.connect(hp); hp.connect(bp); bp.connect(g); g.connect(master);
+    n.start(t); n.stop(t + 0.07);
+
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(320 * p, t);
+    o.frequency.exponentialRampToValueAtTime(190 * p, t + 0.04);
+    const og = ctx.createGain();
+    og.gain.setValueAtTime(Math.max(0.0002, amp * 0.38), t);
+    og.gain.exponentialRampToValueAtTime(0.0001, t + 0.055);
+    o.connect(og); og.connect(master);
+    o.start(t); o.stop(t + 0.07);
+  }
+
+  function clickMarimba(t, amp, p) {
+    const f = 523.25 * p;
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(f, t);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, amp * 0.55), t + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.45);
+
+    const o2 = ctx.createOscillator();
+    o2.type = 'sine';
+    o2.frequency.setValueAtTime(f * 3.98, t);
+    const g2 = ctx.createGain();
+    g2.gain.setValueAtTime(0.0001, t);
+    g2.gain.exponentialRampToValueAtTime(Math.max(0.0002, amp * 0.13), t + 0.004);
+    g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    o2.connect(g2); g2.connect(master);
+    o2.start(t); o2.stop(t + 0.15);
+  }
+
+  /* ==========================================================
+     3. 스케줄러 (Lookahead)
+     ========================================================== */
+  let playing = false;
+  let timerId = null;
+  let rafId = null;
+  let nextNoteTime = 0;
+  let startTime = 0;
+  let beatIdx = 0;
+  let subIdx = 0;
+  let queue = [];          // 시각 이벤트 큐 {time, beat, sub}
+  const eventLog = [];     // 최근 스케줄 기록(검증용, 소리에는 영향 없음)
+
+  function scheduleNote(time, beat, sub) {
+    const level = state.pattern[beat];
+    const sounded = level !== 'mute';
+    if (sounded) {
+      playClick(time, sub === 0 ? level : 'sub');
+    }
+    queue.push({ time: time, beat: beat, sub: sub });
+    if (queue.length > 400) queue.splice(0, queue.length - 400);
+    eventLog.push({
+      t: Number(time.toFixed(4)), beat: beat, sub: sub,
+      level: sounded ? (sub === 0 ? level : 'sub') : 'mute', sounded: sounded
+    });
+    if (eventLog.length > 96) eventLog.shift();
+  }
+
+  function scheduler() {
+    if (!playing) return;
+    const ahead = document.hidden ? LOOKAHEAD_HIDDEN : LOOKAHEAD_VISIBLE;
+    const now = ctx.currentTime;
+    let guard = 0;
+    while (nextNoteTime < now + ahead && guard++ < 512) {
+      scheduleNote(nextNoteTime, beatIdx, subIdx);
+      nextNoteTime += (60 / state.bpm) / state.subdiv;
+      subIdx += 1;
+      if (subIdx >= state.subdiv) {
+        subIdx = 0;
+        beatIdx = (beatIdx + 1) % state.num;
+      }
+    }
+  }
+
+  function frame() {
+    if (!playing) return;
+    const now = ctx.currentTime;
+
+    // 시각 이벤트 소화
+    while (queue.length && queue[0].time <= now) {
+      applyVisual(queue.shift());
+    }
+
+    // 펜듈럼: 한 박에 한 번, 좌우를 번갈아 (2박 주기)
+    const beatDur = 60 / state.bpm;
+    const elapsed = Math.max(0, now - startTime);
+    const phase = (elapsed / beatDur) % 2;
+    const angle = Math.cos(Math.PI * phase) * MAX_ANGLE;
+    el.pendArm.style.transform = 'rotate(' + angle.toFixed(2) + 'deg)';
+
+    // 마디 진행 바
+    const barPos = (elapsed / beatDur) % state.num;
+    el.barFill.style.width = ((barPos / state.num) * 100).toFixed(2) + '%';
+
+    rafId = requestAnimationFrame(frame);
+  }
+
+  function applyVisual(ev) {
+    const cells = el.beatGrid.children;
+    const cell = cells[ev.beat];
+    if (ev.sub === 0) {
+      for (let i = 0; i < cells.length; i++) cells[i].classList.remove('is-current');
+      if (cell) {
+        cell.classList.add('is-current');
+        cell.classList.remove('hit');
+        void cell.offsetWidth;
+        cell.classList.add('hit');
+      }
+      if (el.curBeat.textContent !== String(ev.beat + 1)) {
+        el.curBeat.textContent = String(ev.beat + 1);
+        el.count.classList.remove('pop');
+        void el.count.offsetWidth;
+        el.count.classList.add('pop');
+      }
+      if (state.flash) doFlash(state.pattern[ev.beat] === 'accent');
+    }
+  }
+
+  function doFlash(strong) {
+    el.flash.classList.remove('on', 'strong');
+    void el.flash.offsetWidth;
+    el.flash.classList.add('on');
+    if (strong) el.flash.classList.add('strong');
+  }
+
+  /* ==========================================================
+     4. 재생 제어
+     ========================================================== */
+  async function start() {
+    initAudio();
+    try { await ctx.resume(); } catch (e) { /* 무시 */ }
+    if (playing) return;
+
+    playing = true;
+    beatIdx = 0;
+    subIdx = 0;
+    queue = [];
+    startTime = ctx.currentTime + 0.1;
+    nextNoteTime = startTime;
+
+    el.pendulum.classList.remove('anim');
+    el.curBeat.textContent = '1';
+    el.barFill.style.width = '0%';
+
+    scheduler();
+    timerId = setInterval(scheduler, SCHED_INTERVAL);
+    rafId = requestAnimationFrame(frame);
+    updateTransport();
+  }
+
+  function stop() {
+    playing = false;
+    if (timerId) { clearInterval(timerId); timerId = null; }
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    queue = [];
+    for (let i = 0; i < el.beatGrid.children.length; i++) {
+      el.beatGrid.children[i].classList.remove('is-current', 'hit');
+    }
+    el.pendulum.classList.add('anim');
+    el.pendArm.style.transform = 'rotate(0deg)';
+    el.barFill.style.width = '0%';
+    el.flash.classList.remove('on', 'strong');
+    el.curBeat.textContent = '1';
+    updateTransport();
+  }
+
+  function togglePlay() { if (playing) stop(); else start(); }
+
+  function restartBar() {
+    if (!playing) return;
+    beatIdx = 0; subIdx = 0; queue = [];
+    startTime = ctx.currentTime + 0.05;
+    nextNoteTime = startTime;
+    el.barFill.style.width = '0%';
+    el.curBeat.textContent = '1';
+  }
+
+  function updateTransport() {
+    el.playBtn.classList.toggle('playing', playing);
+    el.playBtn.setAttribute('aria-pressed', playing ? 'true' : 'false');
+    el.playIcon.textContent = playing ? '■' : '▶';
+    el.playLabel.textContent = playing ? '정지' : '시작';
+    updateStatus();
+  }
+
+  function updateStatus() {
+    el.status.textContent =
+      (playing ? '재생 중' : '정지') + ' · ' + state.num + '/' + state.den + ' · ' + state.bpm + ' BPM';
+  }
+
+  /* ==========================================================
+     5. BPM · 빠르기말
+     ========================================================== */
+  function tempoFor(bpm) {
+    for (let i = 0; i < TEMPOS.length; i++) {
+      const cur = TEMPOS[i];
+      const lo = i === 0 ? -Infinity : (TEMPOS[i - 1].bpm + cur.bpm) / 2;
+      const hi = i === TEMPOS.length - 1 ? Infinity : (cur.bpm + TEMPOS[i + 1].bpm) / 2;
+      if (bpm >= lo && bpm < hi) return i;
+    }
+    return TEMPOS.length - 1;
+  }
+
+  function setBpm(value, opts) {
+    const prev = state.bpm;
+    const v = clamp(Math.round(Number(value) || MIN_BPM), MIN_BPM, MAX_BPM);
+    const changed = v !== prev;
+    state.bpm = v;
+
+    el.bpmSlider.value = String(v);
+    el.bpmSlider.style.setProperty('--pct', ((v - MIN_BPM) / (MAX_BPM - MIN_BPM) * 100).toFixed(2) + '%');
+    if (document.activeElement !== el.bpmInput || (opts && opts.forceInput)) {
+      el.bpmInput.value = String(v);
+    }
+    el.bpmBadge.textContent = '20–300';
+
+    const ti = tempoFor(v);
+    el.termEn.textContent = TEMPOS[ti].en;
+    el.termKo.textContent = TEMPOS[ti].ko;
+    $$('.tempo-chip', el.tempoChips).forEach(function (c) {
+      c.classList.toggle('on', Number(c.dataset.bpm) === TEMPOS[ti].bpm);
+    });
+
+    // 재생 중 속도 변경 → 펜듈럼·진행 바가 튀지 않도록 현재 박 위치를 유지한 채 기준시각 보정
+    if (playing && changed) {
+      const beatsElapsed = (ctx.currentTime - startTime) / (60 / prev);
+      startTime = ctx.currentTime - beatsElapsed * (60 / v);
+    }
+
+    updateStatus();
+    save();
+  }
+
+  function bindBpmControls() {
+    el.bpmInput.addEventListener('input', function () {
+      const digits = el.bpmInput.value.replace(/[^\d]/g, '');
+      const v = parseInt(digits, 10);
+      if (Number.isFinite(v) && v >= MIN_BPM && v <= MAX_BPM) setBpm(v);
+    });
+    el.bpmInput.addEventListener('focus', function () { el.bpmInput.select(); });
+    el.bpmInput.addEventListener('blur', function () {
+      const v = parseInt(el.bpmInput.value.replace(/[^\d]/g, ''), 10);
+      setBpm(Number.isFinite(v) ? v : state.bpm);
+      el.bpmInput.value = String(state.bpm);
+    });
+    el.bpmInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); el.bpmInput.blur(); }
+    });
+
+    el.bpmSlider.addEventListener('input', function () { setBpm(el.bpmSlider.value); });
+    $('#bpmDown5').addEventListener('click', function () { setBpm(state.bpm - 5); });
+    $('#bpmDown1').addEventListener('click', function () { setBpm(state.bpm - 1); });
+    $('#bpmUp1').addEventListener('click', function () { setBpm(state.bpm + 1); });
+    $('#bpmUp5').addEventListener('click', function () { setBpm(state.bpm + 5); });
+  }
+
+  /* --- Tap tempo --- */
+  let taps = [];
+  let tapTimer = null;
+
+  function onTap() {
+    const now = performance.now();
+    if (taps.length && now - taps[taps.length - 1] > 2000) taps = [];
+    taps.push(now);
+    if (taps.length > 7) taps.shift();
+
+    el.tapBtn.classList.add('tapped');
+    clearTimeout(el.tapBtn._t);
+    el.tapBtn._t = setTimeout(function () { el.tapBtn.classList.remove('tapped'); }, 130);
+
+    if (taps.length >= 2) {
+      const gaps = [];
+      for (let i = 1; i < taps.length; i++) gaps.push(taps[i] - taps[i - 1]);
+      // 가운데 값 우선(이상치 완화), 짧으면 평균
+      const avg = gaps.reduce(function (a, b) { return a + b; }, 0) / gaps.length;
+      const bpm = Math.round(60000 / avg);
+      setBpm(bpm);
+      el.tapHint.textContent = taps.length + '번 탭 · ' + (Number.isFinite(bpm) ? bpm + ' BPM' : '측정 중');
+    } else {
+      el.tapHint.textContent = '한 번 더 탭하세요';
+    }
+
+    clearTimeout(tapTimer);
+    tapTimer = setTimeout(function () {
+      taps = [];
+      el.tapHint.textContent = '박자에 맞춰 두 번 이상 탭';
+    }, 2500);
+  }
+
+  /* ==========================================================
+     6. 박자표 · 세분박
+     ========================================================== */
+  function setMeter(num, den, opts) {
+    const n = clamp(Number(num) || 4, 1, 16);
+    const d = DENS.indexOf(Number(den)) >= 0 ? Number(den) : 4;
+    state.num = n;
+    state.den = d;
+
+    el.numSel.value = String(n);
+    el.denSel.value = String(d);
+    el.meterBadge.textContent = n + '/' + d;
+    el.numBeats.textContent = String(n);
+
+    $$('.meter-chip', el.meterChips).forEach(function (c) {
+      c.classList.toggle('on', Number(c.dataset.num) === n && Number(c.dataset.den) === d);
+    });
+
+    renderBeats();
+    if (playing) restartBar();
+    updateStatus();
+    save();
+  }
+
+  function setSubdiv(v) {
+    const n = [1, 2, 3, 4].indexOf(Number(v)) >= 0 ? Number(v) : 1;
+    state.subdiv = n;
+    $$('button', el.subSeg).forEach(function (b) {
+      b.classList.toggle('on', Number(b.dataset.sub) === n);
+    });
+    save();
+  }
+
+  function buildMeterChips() {
+    METER_PRESETS.forEach(function (pair) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip meter-chip';
+      b.dataset.num = String(pair[0]);
+      b.dataset.den = String(pair[1]);
+      b.textContent = pair[0] + '/' + pair[1];
+      b.addEventListener('click', function () { setMeter(pair[0], pair[1]); });
+      el.meterChips.appendChild(b);
+    });
+    for (let i = 1; i <= 16; i++) {
+      const o = document.createElement('option');
+      o.value = String(i); o.textContent = i + '박';
+      el.numSel.appendChild(o);
+    }
+    DENS.forEach(function (d) {
+      const o = document.createElement('option');
+      o.value = String(d); o.textContent = '1/' + d;
+      el.denSel.appendChild(o);
+    });
+    el.numSel.addEventListener('change', function () { setMeter(el.numSel.value, state.den); });
+    el.denSel.addEventListener('change', function () { setMeter(state.num, el.denSel.value); });
+    $$('button', el.subSeg).forEach(function (b) {
+      b.addEventListener('click', function () { setSubdiv(b.dataset.sub); });
+    });
+  }
+
+  /* ==========================================================
+     7. 박자 그리드 · 강약 패턴
+     ========================================================== */
+  function renderBeats() {
+    el.beatGrid.innerHTML = '';
+    for (let i = 0; i < state.num; i++) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'beat';
+      b.dataset.index = String(i);
+      b.dataset.state = state.pattern[i];
+      b.setAttribute('aria-label', (i + 1) + '박 ' + LEVEL_KO[state.pattern[i]] + ' — 눌러서 변경');
+      b.title = (i + 1) + '박 · ' + LEVEL_KO[state.pattern[i]];
+      const track = document.createElement('span');
+      track.className = 'beat-track';
+      const bar = document.createElement('span');
+      bar.className = 'beat-bar';
+      track.appendChild(bar);
+      const idx = document.createElement('span');
+      idx.className = 'beat-idx';
+      idx.textContent = String(i + 1);
+      b.appendChild(track);
+      b.appendChild(idx);
+      b.addEventListener('click', function () { cycleBeat(i); });
+      el.beatGrid.appendChild(b);
+    }
+  }
+
+  function cycleBeat(i) {
+    const cur = state.pattern[i];
+    const next = LEVELS[(LEVELS.indexOf(cur) + 1) % LEVELS.length];
+    setBeatLevel(i, next);
+    previewLevel(next);
+  }
+
+  function setBeatLevel(i, level) {
+    state.pattern[i] = level;
+    const cell = el.beatGrid.children[i];
+    if (cell) {
+      cell.dataset.state = level;
+      cell.setAttribute('aria-label', (i + 1) + '박 ' + LEVEL_KO[level] + ' — 눌러서 변경');
+      cell.title = (i + 1) + '박 · ' + LEVEL_KO[level];
+    }
+    save();
+  }
+
+  function applyBeatPreset(name) {
+    for (let i = 0; i < 16; i++) {
+      let level = 'normal';
+      if (name === 'downbeat') level = i === 0 ? 'accent' : 'normal';
+      else if (name === 'uniform') level = 'normal';
+      else if (name === 'sixeight') level = (i === 0 || i === 3) ? 'accent' : 'normal';
+      state.pattern[i] = level;
+    }
+    renderBeats();
+    if (playing) { /* 재생은 유지, 다음 스케줄부터 반영 */ }
+    $$('.chip[data-beatpreset]').forEach(function (c) {
+      c.classList.toggle('on', c.dataset.beatpreset === name);
+    });
+    save();
+  }
+
+  function previewLevel(level) {
+    if (level === 'mute') return;
+    initAudio();
+    if (ctx.state === 'suspended') ctx.resume().catch(function () {});
+    playClick(ctx.currentTime + 0.02, level);
+  }
+
+  /* ==========================================================
+     8. 음색 · 볼륨 · 플래시
+     ========================================================== */
+  function buildTimbres() {
+    TIMBRES.forEach(function (t) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip timbre-btn';
+      b.dataset.timbre = t.id;
+      b.innerHTML = '<b>' + t.name + '</b>';
+      b.title = t.desc;
+      b.addEventListener('click', function () { setTimbre(t.id); });
+      el.timbreChips.appendChild(b);
+    });
+  }
+
+  function setTimbre(id) {
+    state.timbre = id;
+    $$('.timbre-btn', el.timbreChips).forEach(function (b) {
+      b.classList.toggle('on', b.dataset.timbre === id);
+    });
+    previewLevel('accent');
+    save();
+  }
+
+  function setVolume(v) {
+    state.volume = clamp(Number(v) || 0, 0, 100);
+    el.volume.value = String(state.volume);
+    el.volume.style.setProperty('--pct', state.volume + '%');
+    el.volVal.textContent = String(state.volume);
+    if (master) master.gain.setTargetAtTime(volumeToGain(state.volume), ctx.currentTime, 0.02);
+    save();
+  }
+
+  /* ==========================================================
+     9. 저장 · 테마
+     ========================================================== */
+  let saveTimer = null;
+  function save() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          bpm: state.bpm, num: state.num, den: state.den, subdiv: state.subdiv,
+          pattern: state.pattern, timbre: state.timbre, volume: state.volume,
+          flash: state.flash, theme: state.theme
+        }));
+      } catch (e) { /* 사파리 프라이빗 모드 등 */ }
+    }, 200);
+  }
+
+  function load() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (e) { d = null; }
+    if (!d || typeof d !== 'object') return;
+    if (Number.isFinite(d.bpm)) state.bpm = clamp(Math.round(d.bpm), MIN_BPM, MAX_BPM);
+    if (Number.isFinite(d.num)) state.num = clamp(Math.round(d.num), 1, 16);
+    if (DENS.indexOf(d.den) >= 0) state.den = d.den;
+    if ([1, 2, 3, 4].indexOf(d.subdiv) >= 0) state.subdiv = d.subdiv;
+    if (Array.isArray(d.pattern)) {
+      d.pattern.slice(0, 16).forEach(function (v, i) {
+        if (LEVELS.indexOf(v) >= 0) state.pattern[i] = v;
+      });
+    }
+    if (TIMBRES.some(function (t) { return t.id === d.timbre; })) state.timbre = d.timbre;
+    if (Number.isFinite(d.volume)) state.volume = clamp(Math.round(d.volume), 0, 100);
+    if (typeof d.flash === 'boolean') state.flash = d.flash;
+    if (d.theme === 'light' || d.theme === 'dark') state.theme = d.theme;
+  }
+
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', state.theme);
+    el.themeBtn.textContent = state.theme === 'dark' ? '🌙' : '☀️';
+    el.themeBtn.setAttribute('aria-label', state.theme === 'dark' ? '라이트 테마로 전환' : '다크 테마로 전환');
+  }
+
+  /* ==========================================================
+     10. 키보드
+     ========================================================== */
+  function onKeyDown(e) {
+    const tag = (e.target && e.target.tagName || '').toLowerCase();
+    const typing = tag === 'input' || tag === 'select' || tag === 'textarea' || (e.target && e.target.isContentEditable);
+
+    if (e.code === 'Space' || e.key === ' ') {
+      if (typing) return;
+      e.preventDefault();
+      togglePlay();
+      return;
+    }
+    if (typing) return;
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const step = e.shiftKey ? 5 : 1;
+      setBpm(state.bpm + (e.key === 'ArrowUp' ? step : -step));
+    }
+  }
+
+  /* ==========================================================
+     11. 초기화
+     ========================================================== */
+  function applyState() {
+    applyTheme();
+    el.numBeats.textContent = String(state.num);
+    el.meterBadge.textContent = state.num + '/' + state.den;
+    el.numSel.value = String(state.num);
+    el.denSel.value = String(state.den);
+    $$('.meter-chip', el.meterChips).forEach(function (c) {
+      c.classList.toggle('on', Number(c.dataset.num) === state.num && Number(c.dataset.den) === state.den);
+    });
+    $$('button', el.subSeg).forEach(function (b) {
+      b.classList.toggle('on', Number(b.dataset.sub) === state.subdiv);
+    });
+    $$('.timbre-btn', el.timbreChips).forEach(function (b) {
+      b.classList.toggle('on', b.dataset.timbre === state.timbre);
+    });
+    el.volume.value = String(state.volume);
+    el.volume.style.setProperty('--pct', state.volume + '%');
+    el.volVal.textContent = String(state.volume);
+    el.flashToggle.checked = !!state.flash;
+
+    renderBeats();
+    setBpm(state.bpm, { forceInput: true });
+
+    // 기본 프리셋 표시: 4/4 첫 박만 강세
+    $$('.chip[data-beatpreset]').forEach(function (c) {
+      c.classList.toggle('on', c.dataset.beatpreset === 'downbeat');
+    });
+  }
+
+  function bindEvents() {
+    bindBpmControls();
+    el.tapBtn.addEventListener('click', onTap);
+    el.playBtn.addEventListener('click', togglePlay);
+    el.themeBtn.addEventListener('click', function () {
+      state.theme = state.theme === 'dark' ? 'light' : 'dark';
+      applyTheme();
+      save();
+    });
+    el.volume.addEventListener('input', function () { setVolume(el.volume.value); });
+    el.flashToggle.addEventListener('change', function () {
+      state.flash = el.flashToggle.checked;
+      save();
+    });
+    $$('.chip[data-beatpreset]').forEach(function (c) {
+      c.addEventListener('click', function () { applyBeatPreset(c.dataset.beatpreset); });
+    });
+    document.addEventListener('keydown', onKeyDown);
+
+    // 백그라운드 탭에서 돌아올 때 스케줄러 시계 복구
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden && playing) {
+        if (ctx.currentTime > nextNoteTime) nextNoteTime = ctx.currentTime + 0.05;
+        queue = queue.filter(function (q) { return q.time > ctx.currentTime - 0.25; });
+      }
+    });
+  }
+
+  function init() {
+    load();
+    buildMeterChips();
+    buildTimbres();
+    buildTempoChips();
+    applyState();
+    bindEvents();
+  }
+
+  function buildTempoChips() {
+    TEMPOS.forEach(function (t) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip tempo-chip';
+      b.dataset.bpm = String(t.bpm);
+      b.innerHTML = '<b>' + t.en + '</b><span>' + t.bpm + '</span>';
+      b.title = t.en + ' ' + t.bpm + ' BPM · ' + t.ko;
+      b.addEventListener('click', function () { setBpm(t.bpm); });
+      el.tempoChips.appendChild(b);
+    });
+  }
+
+  init();
+
+  // 검증·디버깅용 읽기 전용 상태 (앱 동작에는 영향 없음)
+  window.__metronome = {
+    get state() { return JSON.parse(JSON.stringify(state)); },
+    get playing() { return playing; },
+    get audio() { return ctx ? { state: ctx.state, sampleRate: ctx.sampleRate, baseLatency: ctx.baseLatency } : null; },
+    get queued() { return queue.length; },
+    get log() { return eventLog.slice(-96); }
+  };
+})();
+</script>
+</body>
+</html>

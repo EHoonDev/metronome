@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ehoondev.github.io/metronome/sitemap.xml
