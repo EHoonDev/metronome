@@ -781,7 +781,7 @@ select:focus{border-color:var(--blue)}
     // 새추레이션으로 생긴 고역 성분을 다시 눌러 치찰음이 붙지 않게
     lpf2 = ctx.createBiquadFilter();
     lpf2.type = 'lowpass';
-    lpf2.frequency.value = 6200;
+    lpf2.frequency.value = 5600;
     lpf2.Q.value = 0.55;
 
     comp = ctx.createDynamicsCompressor();
@@ -904,7 +904,7 @@ select:focus{border-color:var(--blue)}
 
     // 나무 타격 트랜지언트 — 단단하되 5kHz 위는 잘라 치찰음 제거
     noiseBurst(t, {
-      hp: 1200, bp: accent ? 2500 : 2250, q: 1.2, lp: accent ? 4600 : 3800,
+      hp: 1150, bp: accent ? 2400 : 2100, q: 1.2, lp: accent ? 4200 : 3500,
       peak: amp * 0.62, attack: 0.0012, decay: accent ? 0.008 : 0.006
     });
 
@@ -945,11 +945,10 @@ select:focus{border-color:var(--blue)}
   function clickStick(t, level) {
     const accent = level === 'accent';
     const amp = { accent: 1.1, secondary: 0.86, normal: 0.66, sub: 0.2 }[level] || 0.5;
-    const center = accent ? 2350 : (level === 'secondary' ? 2150 : 1950);
     const dec = level === 'sub' ? 0.018 : (accent ? 0.05 : 0.038);
 
     noiseBurst(t, {
-      hp: 1300, bp: center, q: 0.9, lp: accent ? 4200 : 3600,
+      hp: 1250, bp: accent ? 2300 : 2050, q: 0.9, lp: accent ? 3900 : 3300,
       peak: amp * 0.82, attack: 0.001, decay: dec
     });
     // 스틱·림의 나무 몸통 — 700~800Hz 공명으로 휴대폰에서도 "딱"의 무게가 남는다
