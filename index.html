@@ -1542,6 +1542,24 @@ select:focus{border-color:var(--blue)}
       }
       return Number(p.toFixed(4));
     },
+    get spectrum() {
+      if (!an) return null;
+      const d = new Float32Array(an.frequencyBinCount);
+      an.getFloatFrequencyData(d);
+      const binHz = (ctx.sampleRate / 2) / d.length;
+      let num = 0, den = 0, hi = 0, tot = 0;
+      for (let i = 1; i < d.length; i++) {
+        const mag = Math.pow(10, d[i] / 20);
+        const f = i * binHz;
+        num += f * mag; den += mag; tot += mag;
+        if (f > 6000) hi += mag;
+      }
+      return {
+        centroid: den ? Math.round(num / den) : 0,
+        highRatio: tot ? Number((hi / tot).toFixed(4)) : 0,
+        rms: Number((den / d.length).toFixed(5))
+      };
+    },
     get panel() {
       return Object.keys(panels).filter(function (k) { return panels[k].open; })[0] || null;
     },
